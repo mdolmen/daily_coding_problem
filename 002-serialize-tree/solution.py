@@ -1,37 +1,15 @@
 #!/usr/bin/env python
 
-class Stack:
-    def __init__(self):
-        self.items = []
-
-    def isEmpty(self):
-        return self.items == []
-
-    def push(self):
-        self.items.append(item)
-
-    def pop(self):
-        return self.items.pop()
-
 class Node:
     def __init__(self, val, left=None, right=None):
         self.val = val
         self.left = left
         self.right = right
 
-def serialize(node):
-    global node_str
-    if (node.val):
-        node_str += node.val
-
-    if (node.left):
-        node_str += '('
-        serialize(node.left)
-    if (node.right):
-        node_str += ')'
-        serialize(node.right)
-
 def print_tree(node):
+    """
+    Utility function to print a binary tree.
+    """
     if (node.val):
         print(node.val)
 
@@ -40,32 +18,81 @@ def print_tree(node):
     if (node.right):
         print_tree(node.right)
 
-# TODO : this function needs a fix
+def serialize(node):
+    """
+    Serialize a binary tree and return a string.
+    """
+    node_str = ""
+
+    if (node.val):
+        node_str += node.val
+
+    if (node.left):
+        node_str += '('
+        node_str += 'L' + serialize(node.left)
+    if (node.right):
+        node_str += ')'
+        node_str += 'R' + serialize(node.right)
+
+    return node_str
+
 def deserialize(node_str):
+    """
+    Deserialize a string into a binary tree (a Node object).
+    """
+    n = None
     left = None
     right = None
-    if '(' in node_str or ')' in node_str:
-        tmp = node_str.split(')')
-        print(tmp)
+    tmp = ""
 
-        if len(tmp) > 1:
-            # there is something to the right
-            right = deserialize(tmp[1])
-
-        left = deserialize(tmp[0])
+    # Parse the root.
+    if '(' in node_str:
+        tmp = node_str.split('(')[0]
+        n = Node(tmp)
+        tmp = node_str[len(tmp)+1:]
+    elif ')' in node_str:
+        tmp = node_str.split(')')[0]
+        n = Node(tmp)
+        tmp = node_str[len(tmp)+1:]
     else:
+        # This node has no subtrees. 
         n = Node(node_str)
-        n.left = left
-        n.right = right
+
+    # Parse the subtree.
+    split_index = tmp.rfind(')')
+
+    if tmp and split_index != -1:
+        # A close bracket signals the end of a subtree.
+        branches = [ tmp[:split_index], tmp[split_index+1:] ]
+
+        if (branches[0][0] == 'L'):
+            n.left = deserialize(branches[0][1:])
+        else:
+            n.right = deserialize(branches[0][1:])
+
+        if len(branches) > 1 and len(branches[1]) > 0:
+            # This subtree has 2 branches.
+            if (branches[1][0] == 'L'):
+                n.left = deserialize(branches[1][1:])
+            else:
+                n.right = deserialize(branches[1][1:])
+    elif tmp:
+        # 'tmp' contains only a node value.
+        if (tmp[0] == 'L'):
+            n.left = deserialize(tmp[1:])
+        else:
+            n.right = deserialize(tmp[1:])
 
     return n
 
 node = Node('root', Node('left', Node('left.left')), Node('right'))
+if deserialize(serialize(node)).left.left.val == 'left.left':
+    print("[+] Test 1 OK.")
 
-node_str = ""
-serialize(node)
-node_str += ')'
-print(node_str)
+node2 = Node('root', None, Node('right'))
+if deserialize(serialize(node2)).right.val == 'right':
+    print("[+] Test 2 OK.")
 
-new = deserialize(node_str)
-print_tree(new)
+node3 = Node('root', Node('left', Node('left.left')))
+if deserialize(serialize(node3)).left.left.val == 'left.left':
+    print("[+] Test 3 OK.")
