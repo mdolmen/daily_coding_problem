@@ -48,8 +48,10 @@ Node *get(Node *head, int index)
         return NULL;
 
     // get to the last item
-    while ( (next = (Node *) ((uintptr_t)current->pnx ^ (uintptr_t)previous)) != NULL)
+    while (current != NULL)
     {
+        next = (Node *) ((uintptr_t)current->pnx ^ (uintptr_t)previous);
+
         if (i == index)
             return current;
 
@@ -68,8 +70,9 @@ void print_list(Node *head)
     Node *current = head;
     Node *next = NULL;
 
-    while ( (next = (Node *) ((uintptr_t)current->pnx ^ (uintptr_t)previous)) != NULL)
+    while (current != NULL)
     {
+        next = (Node *) ((uintptr_t)current->pnx ^ (uintptr_t)previous);
         printf("value: %d\n", current->value);
         previous = current;
         current = next;
