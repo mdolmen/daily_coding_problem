@@ -15,8 +15,6 @@ typedef struct Task {
     struct Task *pnx;
 } Task;
 
-Task t0;
-
 void add(Task *list, Task *new)
 {
     Task *previous = NULL;
@@ -34,15 +32,15 @@ void add(Task *list, Task *new)
     current->pnx = (Task *) ((uintptr_t)previous ^ (uintptr_t)new);
 }
 
-void polling()
+void *polling(void *head)
 {
     Task *previous = NULL, *next = NULL;
-    Task *current = &t0;
+    Task *current = NULL;
     struct timespec timer0, timer1;
     int counter = 0; // milliseconds ellapsed
 
     timer0.tv_sec = 0;
-    timer0.tv_nsec = 1000000;
+    timer0.tv_nsec = 1000000; // 1 ms
 
     while (1)
     {
@@ -50,32 +48,52 @@ void polling()
             exit(EXIT_FAILURE);
         counter++;
 
-        // TODO : need a fix : doesn't go through all of the list
+        // re-init pointers
+        current = (Task*) head;
+        previous = NULL;
+
         // browse tasks and launch it if its time
-        while ( (next = (Task *) ((uintptr_t)current->pnx ^ (uintptr_t)previous)) != NULL)
+        while (current != NULL)
         {
-            printf("next = %p\n", *next);
-            printf("delay = %d - counter  = %d\n", current->delay, counter);
-            if (counter > current->delay && current->delay != 0)
+            next = (Task*) ((uintptr_t)current->pnx ^ (uintptr_t)previous);
+
+            if (counter > current->delay && current->delay != -1)
             {
                 current->fct();
-                // quick and dirty solution : should remove the element of the
-                // list
-                current->delay = 0;
+                
+                // The task has been run. A better solution would be to class
+                // task by order of time priority while adding an element to the
+                // list, so we now that 'head' is the next to be launched and we
+                // don't need to go throught all the tasks anymore.
+                current->delay = -1;
             }
 
             previous = current;
             current = next;
         }
-
     }
 }
 
-void scheduler()
+void print_list(Task *head)
+{
+    Task *previous = NULL;
+    Task *current = head;
+    Task *next = NULL;
+
+    while (current != NULL)
+    {
+        next = (Task *) ((uintptr_t)current->pnx ^ (uintptr_t)previous);
+        printf("value: %d\n", current->delay);
+        previous = current;
+        current = next;
+    }
+}
+
+void scheduler(void *tasks)
 {
     pthread_t thp_id = 0;
 
-    pthread_create(&thp_id, NULL, polling, NULL);
+    pthread_create(&thp_id, NULL, polling, tasks);
     pthread_join(thp_id, NULL);
 }
 
@@ -86,7 +104,7 @@ void job3() { puts("Doing Job 3.."); }
 
 int main(void)
 {
-    Task t1, t2, t3;
+    Task t0, t1, t2, t3;
     
     t0.fct = job0;
     t0.delay = 30;
@@ -108,7 +126,7 @@ int main(void)
     add(&t0, &t2);
     add(&t0, &t3);
 
-    scheduler();
+    scheduler((void*)&t0);
 
     return 0;
 }
