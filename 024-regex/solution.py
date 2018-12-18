@@ -17,7 +17,6 @@
 # false.
 
 def match_regex(string, r):
-    previous = ''
     i = 0
 
     for char in string:
@@ -30,11 +29,7 @@ def match_regex(string, r):
             if r[i+1] == '*' and (char == c or c == '.'):
                 continue
 
-        if c == '.':
-            previous = '.'
-        elif c == char:
-            previous = c
-        else:
+        if not (c == '.' or c == char):
             return False
 
         i += 1
